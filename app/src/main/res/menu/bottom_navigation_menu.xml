@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_recipes"
+        android:title="Home"
+        android:icon="@drawable/ic_home" />
+    <item
+        android:id="@+id/action_account"
+        android:title="Account"
+        android:icon="@drawable/ic_account" />
+    <item
+        android:id="@+id/action_add_recipe"
+        android:title="Add Recipe"
+        android:icon="@drawable/ic_add_recipe" />
+    <item
+        android:id="@+id/action_liked_recipes"
+        android:title="Liked Recipes"
+        android:icon="@drawable/ic_liked_recipes" />
+</menu>

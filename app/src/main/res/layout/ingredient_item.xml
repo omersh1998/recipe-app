@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:orientation="vertical">
+
+<androidx.cardview.widget.CardView
+    android:layout_width="match_parent"
+    android:layout_height="50sp"
+    android:layout_marginLeft="20sp"
+    android:layout_marginRight="20sp"
+    android:layout_marginBottom="5sp"
+    android:backgroundTint="@color/colorAccent"
+    app:cardCornerRadius="15sp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/ingredientNameTextView"
+            android:layout_width="30dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20sp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:textColor="@android:color/black"
+            android:textSize="16sp" />
+
+        <!-- Space between Checkbox and Amount -->
+        <Space
+            android:layout_width="16dp"
+            android:layout_height="match_parent" />
+
+
+        <!-- EditText for Amount -->
+        <EditText
+            android:id="@+id/amountEditText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="@color/black"
+            android:hint="Amount"
+            android:inputType="text"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:textColor="@color/black"
+            android:textColorHighlight="@color/black"
+            android:textColorHint="@color/black"
+            android:textColorLink="@color/black"
+            android:textSize="16sp" />
+
+        <!-- Space between Checkbox and Amount -->
+        <Space
+            android:layout_width="16dp"
+            android:layout_height="match_parent" />
+
+        <!-- Checkbox for selecting ingredient -->
+        <CheckBox
+            android:id="@+id/ingredientCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
+</LinearLayout>
