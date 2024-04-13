@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:layoutDirection="ltr"
     android:padding="16dp">
 
     <!-- Header -->
@@ -10,6 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Add Ingredient"
+        android:textColor="@color/black"
         android:textSize="24sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp"/>
@@ -20,6 +22,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Enter Ingredient Name"
+        android:textColor="@color/black"
+        android:textColorHint="@color/black"
+        android:backgroundTint="@color/black"
         android:autofillHints="name"
         android:inputType="text"/>
 
@@ -28,6 +33,7 @@
         android:id="@+id/submitIngredientButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:backgroundTint="@color/colorAccent"
         android:text="Add Ingredient"
         android:layout_marginTop="16dp"/>
 

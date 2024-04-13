@@ -5,6 +5,7 @@
     android:background="@color/colorPrimary"
     android:gravity="center"
     android:orientation="vertical"
+    android:layoutDirection="ltr"
     android:padding="16dp">
 
     <ImageView

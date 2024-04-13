@@ -39,7 +39,7 @@
 
             <TextView
                 android:id="@+id/recipeNameTextView"
-                android:layout_width="250sp"
+                android:layout_width="200sp"
                 android:layout_height="wrap_content"
                 android:layout_alignBottom="@+id/gradient"
                 android:layout_marginLeft="20sp"

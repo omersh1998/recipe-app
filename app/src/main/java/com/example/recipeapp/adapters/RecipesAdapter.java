@@ -144,6 +144,7 @@ public class RecipesAdapter extends RecyclerView.Adapter<RecipesAdapter.RecipeVi
             // updates.put("key3/nested_key2", "new_value3");
 
             // Update the data in the database
+            recipe.setLiked(updateLikeTo);
             userRef.updateChildren(updates);
         }
     }

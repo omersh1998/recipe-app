@@ -45,7 +45,6 @@ public class SingleRecipeFragment extends Fragment {
     private Recipe recipe;
     private ImageView cover_image;
     private TextView recipeNameTextView;
-    private TextView description_text_view;
     private ImageButton likeSingleButton;
     private RecyclerView recyclerViewIngredients;
     private IngredientListAdapter ingredientListAdapter;
@@ -79,7 +78,6 @@ public class SingleRecipeFragment extends Fragment {
 
         cover_image = (ImageView) rootView.findViewById(R.id.cover_image);
         recipeNameTextView = (TextView) rootView.findViewById(R.id.recipeNameTextView);
-        description_text_view = (TextView) rootView.findViewById(R.id.description_text_view);
         likeSingleButton = (ImageButton) rootView.findViewById(R.id.likeSingleButton);
         recipe_preparation = (TextView) rootView.findViewById(R.id.recipe_preparation);
 
@@ -87,7 +85,6 @@ public class SingleRecipeFragment extends Fragment {
         homeActivity.loadImageToView(recipe, cover_image);
 
         recipeNameTextView.setText(recipe.getName());
-        description_text_view.setText(recipe.getDescription());
         recipe_preparation.setText(recipe.getDescription());
 
         ingredientListAdapter = new IngredientListAdapter(getActivity(), this.recipe.getIngredients());

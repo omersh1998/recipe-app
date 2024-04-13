@@ -176,7 +176,7 @@ public class AccountFragment extends Fragment {
                         }
 
                         Boolean isLiked = likedRecipes.contains(recipeId);
-                        recipes.add(new Recipe(recipeId, recipeName, ingredients, description, imageUrl, isLiked));
+                        recipes.add(new Recipe(recipeId, recipeName, ingredients, description, imageUrl, isLiked, userId));
                     }
                 }
 

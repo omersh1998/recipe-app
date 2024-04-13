@@ -25,13 +25,14 @@ public class Recipe {
 
     private Boolean isLiked;
 
-    public Recipe(String id, String name, ArrayList<Ingredient> ingredients, String description, @Nullable String imageUrl, Boolean isLiked) {
+    public Recipe(String id, String name, ArrayList<Ingredient> ingredients, String description, @Nullable String imageUrl, Boolean isLiked, @Nullable String userId) {
         this.name = name;
         this.id = id;
         this.ingredients = ingredients;
         this.description = description;
         this.imageUrl = imageUrl;
         this.isLiked = isLiked;
+        this.user = userId;
     }
 
     public Recipe(String name, ArrayList<Ingredient> ingredients, String description, @Nullable String imageUrl, @Nullable String userId) {

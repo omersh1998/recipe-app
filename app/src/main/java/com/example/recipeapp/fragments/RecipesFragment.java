@@ -1,12 +1,10 @@
 package com.example.recipeapp.fragments;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.DefaultItemAnimator;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.text.Editable;
@@ -15,14 +13,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.TextView;
 
 import com.example.recipeapp.R;
 import com.example.recipeapp.activities.HomeActivity;
 import com.example.recipeapp.adapters.RecipesAdapter;
 import com.example.recipeapp.models.Ingredient;
 import com.example.recipeapp.models.Recipe;
-import com.example.recipeapp.models.User;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.firebase.auth.FirebaseAuth;
@@ -41,7 +37,7 @@ import java.util.Objects;
  * Use the {@link RecipesFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class RecipesFragment extends Fragment {
+public class RecipesFragment extends Fragment implements HomeActivity.ApiResponseListener {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -57,10 +53,10 @@ public class RecipesFragment extends Fragment {
     private ArrayList<String> checkedIngredientIds;
     private RecyclerView recyclerView;
     private ArrayList<Recipe> recipes;
+    private ArrayList<Recipe> localRecipes;
     private String userName;
     private String userId;
     private EditText editTextNameSearch;
-    private ArrayList<String> likedRecipes;
     private HomeActivity homeActivity;
     private RecipesAdapter recipesAdapter;
 
@@ -80,6 +76,29 @@ public class RecipesFragment extends Fragment {
         args.putString(USER_ID, userId);
         fragment.setArguments(args);
         return fragment;
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof HomeActivity) {
+            ((HomeActivity) context).setApiResponseListener(this);
+        }
+    }
+
+    @Override
+    public void onRecipesLoaded() {
+        // Finished loading recipes from the internet
+        homeActivity.totalRecipes.clear();
+        homeActivity.totalRecipes.addAll(homeActivity.onlineRecipes);
+        homeActivity.totalRecipes.addAll(localRecipes);
+        setRecipesAdapter(homeActivity.totalRecipes);
+        homeActivity.stopLoading();
+    }
+
+    @Override
+    public void onLikedResponseFinished() {
+        // Nothing to do
     }
 
     @Override
@@ -112,18 +131,27 @@ public class RecipesFragment extends Fragment {
         editTextNameSearch = rootView.findViewById(R.id.editTextNameSearch);
 
         recipes = new ArrayList<>();
-        likedRecipes = new ArrayList<>();
+        localRecipes = new ArrayList<>();
         checkedIngredientIds = new ArrayList<>();
 
         homeActivity = (HomeActivity) getActivity();
         homeActivity.startLoading();
 
+        homeActivity.myRecipeList.getRecipeList().observe(getViewLifecycleOwner(), newArray -> {
+            onRecipesLoaded();
+            homeActivity.totalRecipes.clear();
+            homeActivity.totalRecipes.addAll(homeActivity.onlineRecipes);
+            homeActivity.totalRecipes.addAll(localRecipes);
+            setRecipesAdapter(newArray);
+            homeActivity.stopLoading();
+        });
+
         recyclerView = rootView.findViewById(R.id.res);
         recyclerView = homeActivity.createRecycleView(recyclerView);
 
-        getUserData();
-
         getIngredientsAndAddChips(rootView);
+
+        setRecipesAdapter(homeActivity.totalRecipes);
 
         editTextNameSearch.addTextChangedListener(new TextWatcher() {
             @Override
@@ -145,87 +173,6 @@ public class RecipesFragment extends Fragment {
 
         // Inflate the layout for this fragment
         return rootView;
-    }
-
-    // Set the user's name and liked recipes
-    public void getUserData () {
-        userRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                userName = dataSnapshot.child("name").getValue(String.class);
-                likedRecipes.clear();
-
-                // Get the list of ingredients
-                for (DataSnapshot likedRecipesSnapshot : dataSnapshot.child("like").getChildren()) {
-                    String likedRecipeId = likedRecipesSnapshot.getKey();
-                    likedRecipes.add(likedRecipeId);
-                }
-
-                getRecipesData();
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                System.out.println("The read failed: " + databaseError.getCode());
-                getRecipesData();
-            }
-        });
-    }
-
-    public void getRecipesData () {
-        recipeRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                recipes.clear();
-
-                for (DataSnapshot recipeSnapshot : dataSnapshot.getChildren()) {
-                    // Get the recipe name
-                    String recipeName = (String) recipeSnapshot.child("name").getValue();
-                    String recipeId = recipeSnapshot.getKey();
-                    System.out.println("Recipe Name: " + recipeName);
-
-                    ArrayList<Ingredient> ingredients = new ArrayList<>();
-
-                    // Get the list of ingredients
-                    for (DataSnapshot ingredientSnapshot : recipeSnapshot.child("ingredients").getChildren()) {
-                        // Get the name and amount of the ingredient
-                        String ingredientId = ingredientSnapshot.child("id").getValue(String.class);
-                        String ingredientName = ingredientSnapshot.child("name").getValue(String.class);
-                        String ingredientAmount = ingredientSnapshot.child("amount").getValue(String.class);
-                        System.out.println("Ingredient: " + ingredientName + ", Amount: " + ingredientAmount);
-                        ingredients.add(new Ingredient(ingredientName, ingredientAmount, ingredientId));
-                    }
-
-                    // Get the description
-                    String description = (String) recipeSnapshot.child("description").getValue();
-
-                    // Get the image url
-                    String imageUrl = null;
-                    if ((String) recipeSnapshot.child("imageUrl").getValue() != null) {
-                        imageUrl = (String) recipeSnapshot.child("imageUrl").getValue();
-                    }
-
-                    // Get the user
-                    String user = (String) recipeSnapshot.child("user").getValue();
-
-                    if (Objects.equals(user, "all") || Objects.equals(user, userId)) {
-                        Boolean isLiked = likedRecipes.contains(recipeId);
-                        recipes.add(new Recipe(recipeId, recipeName, ingredients, description, imageUrl, isLiked));
-                    }
-                    System.out.println("description: " + description);
-                }
-
-                homeActivity.stopLoading();
-
-                setRecipesAdapter(recipes);
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                System.out.println("The read failed: " + databaseError.getCode());
-                homeActivity.stopLoading();
-            }
-        });
     }
 
     private void setRecipesAdapter(ArrayList<Recipe> recipesToSet) {
@@ -299,18 +246,18 @@ public class RecipesFragment extends Fragment {
     private void updateIngredientsFilter() {
         ArrayList<Recipe> filteredRecipes = new ArrayList<>();
 
-        for (Recipe recipe : recipes) {
+        for (Recipe recipe : homeActivity.totalRecipes) {
             ArrayList<String> recipeIngredientIds = recipe.getIngredientIds();
 
             // Check if the recipe contains all the ingredient IDs in ingredientsIds
             if (recipeIngredientIds.containsAll(checkedIngredientIds)) {
-                if (recipe.getName().contains(editTextNameSearch.getText())) {
+                String lowerCaseSearch = editTextNameSearch.getText().toString().toLowerCase();
+                if (recipe.getName().toLowerCase().contains(lowerCaseSearch)) {
                     filteredRecipes.add(recipe);
                 }
             }
         }
 
         setRecipesAdapter(filteredRecipes);
-
     }
 }

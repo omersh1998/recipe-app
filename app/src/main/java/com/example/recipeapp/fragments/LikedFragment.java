@@ -5,7 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -14,17 +14,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.recipeapp.R;
 import com.example.recipeapp.activities.HomeActivity;
 import com.example.recipeapp.adapters.RecipesAdapter;
-import com.example.recipeapp.models.Ingredient;
 import com.example.recipeapp.models.Recipe;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -37,11 +32,10 @@ public class LikedFragment extends Fragment {
     private static final String USER_ID = "userId";
     private String userName;
     private String userId;
-    private ArrayList<Recipe> recipes;
+    private ArrayList<Recipe> likedRecipes;
     private RecipesAdapter recipesAdapter;
     private DatabaseReference userRef;
     private DatabaseReference recipeRef;
-    private ArrayList<String> likedRecipes;
     private HomeActivity homeActivity;
     private RecyclerView recyclerView;
     private FirebaseAuth mAuth;
@@ -83,112 +77,113 @@ public class LikedFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.liked_recipes, container, false);
 
+        homeActivity = (HomeActivity) getActivity();
+
         FirebaseDatabase realTimeDb = FirebaseDatabase.getInstance();
         userRef = realTimeDb.getReference("users").child(userId);
 
-        recipes = new ArrayList<>();
         likedRecipes = new ArrayList<>();
+        homeActivity.likedRecipeIds = new ArrayList<>();
+
+        homeActivity.getLikedRecipes();
 
         recyclerView = createRecycleView(rootView);
 
-        homeActivity = (HomeActivity) getActivity();
-        homeActivity.startLoading();
+//        getMyRecipes(null);
 
-        getLikedRecipes();
+        homeActivity.myRecipeList.getRecipeList().observe(getViewLifecycleOwner(), newArray -> {
+            getMyRecipes(newArray);
+        });
 
         return rootView;
     }
 
-    public void getLikedRecipes () {
-        userRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                userName = dataSnapshot.child("name").getValue(String.class);
-                likedRecipes.clear();
-
-                // Get the list of ingredients
-                for (DataSnapshot likedRecipesSnapshot : dataSnapshot.child("like").getChildren()) {
-                    String likedRecipeId = likedRecipesSnapshot.getKey();
-                    likedRecipes.add(likedRecipeId);
-                }
-
-                getMyRecipes();
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                System.out.println("The read failed: " + databaseError.getCode());
-                likedRecipes.clear();
-                getMyRecipes();
-            }
-        });
-    }
-
-    public void getMyRecipes () {
+    public void getMyRecipes (@Nullable ArrayList<Recipe> recipesToCheck) {
         // Start getting recipes data
         FirebaseDatabase realTimeDb = FirebaseDatabase.getInstance();
         recipeRef = realTimeDb.getReference("recipes");
-        recipes = new ArrayList<>();
+        likedRecipes = new ArrayList<>();
+
+        ArrayList<Recipe> recipesToUse;
+        if (recipesToCheck != null) {
+            recipesToUse = recipesToCheck;
+        } else {
+            recipesToUse = homeActivity.totalRecipes;
+        }
+
+        for (Recipe recipe : recipesToUse) {
+            if (recipe.getLiked()) {
+                likedRecipes.add(recipe);
+            }
+        }
 
         // Start loading screen
-        homeActivity.startLoading();
+        homeActivity.stopLoading();
 
-        recipeRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                recipes.clear();
+        // Initialize or update the adapter
+        if (recipesAdapter == null) {
+            recipesAdapter = new RecipesAdapter(getActivity(), likedRecipes, recipeRef, userRef, userId);
+            recyclerView.setAdapter(recipesAdapter);
+        } else {
+            recipesAdapter.setRecipeList(likedRecipes);
+        }
 
-                for (DataSnapshot recipeSnapshot : dataSnapshot.getChildren()) {
-                    // Get the user
-                    String user = (String) recipeSnapshot.child("user").getValue();
-                    String recipeId = recipeSnapshot.getKey();
-                    boolean isLiked = likedRecipes.contains(recipeId);
-
-                    // Only continue if the recipe is the current user's recipe
-                    if ((Objects.equals(user, "all") || Objects.equals(user, userId)) && isLiked) {
-                        // Get the recipe name
-                        String recipeName = (String) recipeSnapshot.child("name").getValue();
-                        System.out.println("Recipe Name: " + recipeName);
-
-                        ArrayList<Ingredient> ingredients = new ArrayList<>();
-
-                        // Get the list of ingredients
-                        for (DataSnapshot ingredientSnapshot : recipeSnapshot.child("ingredients").getChildren()) {
-                            String ingredientId = ingredientSnapshot.getKey();
-                            String ingredientName = ingredientSnapshot.child("name").getValue(String.class);
-                            String ingredientAmount = ingredientSnapshot.child("amount").getValue(String.class);
-                            System.out.println("Ingredient: " + ingredientName + ", Amount: " + ingredientAmount);
-                            ingredients.add(new Ingredient(ingredientName, ingredientAmount, ingredientId));
-                        }
-
-                        // Get the description
-                        String description = (String) recipeSnapshot.child("description").getValue();
-
-                        // Get the image url
-                        String imageUrl = null;
-                        if ((String) recipeSnapshot.child("imageUrl").getValue() != null) {
-                            imageUrl = (String) recipeSnapshot.child("imageUrl").getValue();
-                        }
-
-                        recipes.add(new Recipe(recipeId, recipeName, ingredients, description, imageUrl, isLiked));
-                    }
-                }
-
-                homeActivity.stopLoading();
-
-                // Initialize or update the adapter
-                if (recipesAdapter == null) {
-                    recipesAdapter = new RecipesAdapter(getActivity(), recipes, recipeRef, userRef, userId);
-                    recyclerView.setAdapter(recipesAdapter);
-                } else {
-                    recipesAdapter.setRecipeList(recipes);
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                System.out.println("The read failed: " + databaseError.getCode());
-            }
-        });
+//        recipeRef.addValueEventListener(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                recipes.clear();
+//
+//                for (DataSnapshot recipeSnapshot : dataSnapshot.getChildren()) {
+//                    // Get the user
+//                    String user = (String) recipeSnapshot.child("user").getValue();
+//                    String recipeId = recipeSnapshot.getKey();
+//                    boolean isLiked = likedRecipeIds.contains(recipeId);
+//
+//                    // Only continue if the recipe is the current user's recipe
+//                    if ((Objects.equals(user, "all") || Objects.equals(user, userId)) && isLiked) {
+//                        // Get the recipe name
+//                        String recipeName = (String) recipeSnapshot.child("name").getValue();
+//                        System.out.println("Recipe Name: " + recipeName);
+//
+//                        ArrayList<Ingredient> ingredients = new ArrayList<>();
+//
+//                        // Get the list of ingredients
+//                        for (DataSnapshot ingredientSnapshot : recipeSnapshot.child("ingredients").getChildren()) {
+//                            String ingredientId = ingredientSnapshot.getKey();
+//                            String ingredientName = ingredientSnapshot.child("name").getValue(String.class);
+//                            String ingredientAmount = ingredientSnapshot.child("amount").getValue(String.class);
+//                            System.out.println("Ingredient: " + ingredientName + ", Amount: " + ingredientAmount);
+//                            ingredients.add(new Ingredient(ingredientName, ingredientAmount, ingredientId));
+//                        }
+//
+//                        // Get the description
+//                        String description = (String) recipeSnapshot.child("description").getValue();
+//
+//                        // Get the image url
+//                        String imageUrl = null;
+//                        if ((String) recipeSnapshot.child("imageUrl").getValue() != null) {
+//                            imageUrl = (String) recipeSnapshot.child("imageUrl").getValue();
+//                        }
+//
+//                        recipes.add(new Recipe(recipeId, recipeName, ingredients, description, imageUrl, true, user));
+//                    }
+//                }
+//
+//                homeActivity.stopLoading();
+//
+//                // Initialize or update the adapter
+//                if (recipesAdapter == null) {
+//                    recipesAdapter = new RecipesAdapter(getActivity(), recipes, recipeRef, userRef, userId);
+//                    recyclerView.setAdapter(recipesAdapter);
+//                } else {
+//                    recipesAdapter.setRecipeList(recipes);
+//                }
+//            }
+//
+//            @Override
+//            public void onCancelled(DatabaseError databaseError) {
+//                System.out.println("The read failed: " + databaseError.getCode());
+//            }
+//        });
     }
 }
