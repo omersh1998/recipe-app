@@ -1,3 +1,4 @@
-# shopping-cart
+# Recipe App
 
-A shopping cart app, that allows you to register, and then add items to your cart
+An app that allows you to save all of your favorite recipes.
+You can also add new recipes, search for recipes online, and find recipes based on your ingredients
